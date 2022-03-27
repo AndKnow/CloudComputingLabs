@@ -26,7 +26,7 @@ const int BUFFER_PROBLEMS = 4096;//缓存区能放4096条任务或者答案
 enum output{assigned = 0, is_solved, sent };
 extern int flag_output_done ;//判断是否结束输出
 extern int flag_output_run ; //启动标志
-extern int *data_buffer[BUFFER_PROBLEMS];//存放问题或者答案,一次最多解决1024个问题
+extern char *data_buffer[BUFFER_PROBLEMS];//存放问题或者答案,一次最多解决1024个问题
 extern output outputStatus[BUFFER_PROBLEMS];//存放每个位置的状态
 void sorted_output();
     // 动态分配任务编码

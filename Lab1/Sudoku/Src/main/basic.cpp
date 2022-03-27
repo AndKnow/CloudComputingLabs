@@ -95,10 +95,10 @@ void read_File(const char *fileName, char **problem) {
 
 void sudoku_Solve(int pos) {
   int board[N]; 
-
   printf("problem:");
+  
   for(int i = 0;i < SIZE_SINGLE_LINE - 1; i++) {
-    board[i] = data_buffer[pos][i];
+    board[i] = data_buffer[pos][i] - '0';
     printf("%d", board[i]);
   }
 
@@ -107,7 +107,7 @@ void sudoku_Solve(int pos) {
 
   printf("\nanswer :");
   for(int i = 0;i < SIZE_SINGLE_LINE - 1; i++) {
-    // data_buffer[pos][i] = board[i] + '0';//这里先复制,后面再看看
+    data_buffer[pos][i] = board[i] + '0';//这里先复制,后面再看看
     printf("%d", board[i]);
   }
   printf("\n");
@@ -115,7 +115,7 @@ void sudoku_Solve(int pos) {
 
 int flag_output_done = 0;//判断是否结束输出
 int flag_output_run = 0; //启动标志
-int *data_buffer[BUFFER_PROBLEMS];//存放问题或者答案,一次最多解决1024个问题
+char *data_buffer[BUFFER_PROBLEMS];//存放问题或者答案,一次最多解决1024个问题
 output outputStatus[BUFFER_PROBLEMS];//存放每个位置的状态
 
 int before(int now) {
@@ -197,17 +197,16 @@ void read_File(const char *fileName){
       // 但是我为啥需要buffer呢?直接传到那个数组里面不就好了吗
 
       // 如果此处fgets,传入的参数是sizeof(buffer),只会传递指针的长度
-      if(fgets((char*)buffer, SIZE_SINGLE_LINE, file) != NULL){
+      if(fgets((char*)data_buffer[pos_now], SIZE_SINGLE_LINE, file) != NULL){
         len_read = strlen((char*)buffer);
         int ch = fgetc(file);//接受掉换行符
-
-        printf("data_buffer%d:n",pos_now);
-        for(int i = 0; i <SIZE_SINGLE_LINE - 1; i++) {
-          data_buffer[pos_now][i] = buffer[i] - '0';
-          printf("%d", data_buffer[pos_now][i]);
-        } printf("\n");
+        
+        printf("data_buffer%d: %s \n",pos_now, data_buffer[pos_now]);
+        // for(int i = 0; i <SIZE_SINGLE_LINE - 1; i++) {
+        //   data_buffer[pos_now][i] = buffer[i] - '0';
+        //   printf("%d", data_buffer[pos_now][i]);
+        // } printf("\n");
         outputStatus[pos_now] = assigned;//该位置已经被分配
-
         // printf("buffer : %s \n",buffer);
         //printf("data_buffer%d: %s \n",pos_now, data_buffer[pos_now]);
       }else {

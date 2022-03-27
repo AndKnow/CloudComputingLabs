@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
   Queue_FreeAry.push_back(FreeAry(0,BUFFER_PROBLEMS/2));
   Queue_FreeAry.push_back(FreeAry(BUFFER_PROBLEMS/2, BUFFER_PROBLEMS));
   for(int i = 0; i < BUFFER_PROBLEMS; i++) {
-    data_buffer[i] = (int*)malloc(SIZE_SINGLE_LINE);
+    data_buffer[i] = (char*)malloc(SIZE_SINGLE_LINE);
   }
 
   while (1) {
