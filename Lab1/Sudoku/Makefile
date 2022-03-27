@@ -1,7 +1,13 @@
 CXXFLAGS+=-O2 -ggdb -DDEBUG
 CXXFLAGS+=-Wall -Wextra
 
-all: sudoku
+src1 = ./Src/main/main.cpp ./Src/main/basic.cpp
+src2 = $(wildcard ./Src/SudokuSoving/*.cc)
+Path_Inclde = ./Include
+src_test = ./Src/main/test.cpp
+Target:sudoku 
+test:$(src_test)
+	g++ $^ -o $@
 
-sudoku: main.cc neighbor.cc sudoku_basic.cc sudoku_min_arity.cc sudoku_min_arity_cache.cc sudoku_dancing_links.cc
-	g++ -O2 -o $@ $^
+sudoku: $(src1) $(src2) 
+	g++ -o $@ $^ -I $(Path_Inclde)
