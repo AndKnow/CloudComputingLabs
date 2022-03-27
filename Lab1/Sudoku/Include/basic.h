@@ -20,13 +20,13 @@ const int SIZE_SINGLE_LINE = 82;//每行数据大小
 const int SIZE_LINE_NUM = 10;//一次读取多少行
 void read_File(const char *fileName, char **problem);
     // 封装解决数独函数,未解决
-void sudoku_Solve(const char *problem);
+void sudoku_Solve(int);
     // 利用数组解决输出顺序问题
-const int BUFFER_PROBLEMS = 1024;
-enum output{assigned = 0, ready, done };
+const int BUFFER_PROBLEMS = 4096;//缓存区能放4096条任务或者答案
+enum output{assigned = 0, is_solved, sent };
 extern int flag_output_done ;//判断是否结束输出
 extern int flag_output_run ; //启动标志
-extern char *data_buffer[BUFFER_PROBLEMS];//存放问题或者答案,一次最多解决1024个问题
+extern int *data_buffer[BUFFER_PROBLEMS];//存放问题或者答案,一次最多解决1024个问题
 extern output outputStatus[BUFFER_PROBLEMS];//存放每个位置的状态
 void sorted_output();
     // 动态分配任务编码

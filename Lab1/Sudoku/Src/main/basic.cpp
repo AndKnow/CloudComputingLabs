@@ -93,17 +93,29 @@ void read_File(const char *fileName, char **problem) {
   }
 }
 
-void sudoku_Solve(const char *problem) {
-  // 还在封装,后面再研究
-  // input(problem); // 输入到board数组中
-  // init_cache();  // occupied[81][10]数组，arity[81]数组
-  // if (solve_sudoku_dancing_links(0)) {
-  // }
+void sudoku_Solve(int pos) {
+  int board[N]; 
+
+  printf("problem:");
+  for(int i = 0;i < SIZE_SINGLE_LINE - 1; i++) {
+    board[i] = data_buffer[pos][i];
+    printf("%d", board[i]);
+  }
+
+  solve_sudoku_dancing_links(board);
+  outputStatus[pos] = is_solved;
+
+  printf("\nanswer :");
+  for(int i = 0;i < SIZE_SINGLE_LINE - 1; i++) {
+    // data_buffer[pos][i] = board[i] + '0';//这里先复制,后面再看看
+    printf("%d", board[i]);
+  }
+  printf("\n");
 }
 
 int flag_output_done = 0;//判断是否结束输出
 int flag_output_run = 0; //启动标志
-char *data_buffer[BUFFER_PROBLEMS];//存放问题或者答案,一次最多解决1024个问题
+int *data_buffer[BUFFER_PROBLEMS];//存放问题或者答案,一次最多解决1024个问题
 output outputStatus[BUFFER_PROBLEMS];//存放每个位置的状态
 
 int before(int now) {
@@ -123,15 +135,25 @@ void sorted_output() {
       int pos_be = before(pos_now);
       int pos_af = after(pos_now);
 
-      while(outputStatus[pos_be] != done) {
+      while(outputStatus[pos_be] != sent || outputStatus[pos_now] != is_solved) {
+        sleep(1);
+        printf("Output waiting....\n");
         if(flag_output_run){//初次启动
           flag_output_run = 0;
           break;
         }
       } 
-      printf("solved :%s\n", data_buffer[pos_now]);
-      outputStatus[pos_now] = done;
+      //printf("solved :%s\n", data_buffer[pos_now]);
+      outputStatus[pos_now] = sent;
       pos_now = pos_af;
+      // 将缓存分成两部分(当前这么处理),
+      if(pos_now == BUFFER_PROBLEMS/2 ){
+        printf("将号码存入队列:%d -> %d\n", pos_now, BUFFER_PROBLEMS);
+        Queue_FreeAry.push_back(FreeAry(pos_now, BUFFER_PROBLEMS));
+      }else if(pos_now == 0){
+        printf("将号码存入队列:%d -> %d\n", pos_now, BUFFER_PROBLEMS/2);
+        Queue_FreeAry.push_back(FreeAry(pos_now, BUFFER_PROBLEMS/2));
+      }
   }
 }
 
@@ -172,14 +194,22 @@ void read_File(const char *fileName){
 
       // buffer作为指针,不分配内存只是赋值,永远只能覆盖
       buffer = (char*)malloc(SIZE_SINGLE_LINE);
+      // 但是我为啥需要buffer呢?直接传到那个数组里面不就好了吗
 
       // 如果此处fgets,传入的参数是sizeof(buffer),只会传递指针的长度
       if(fgets((char*)buffer, SIZE_SINGLE_LINE, file) != NULL){
         len_read = strlen((char*)buffer);
         int ch = fgetc(file);//接受掉换行符
-        data_buffer[pos_now] = buffer;
+
+        printf("data_buffer%d:n",pos_now);
+        for(int i = 0; i <SIZE_SINGLE_LINE - 1; i++) {
+          data_buffer[pos_now][i] = buffer[i] - '0';
+          printf("%d", data_buffer[pos_now][i]);
+        } printf("\n");
+        outputStatus[pos_now] = assigned;//该位置已经被分配
+
         // printf("buffer : %s \n",buffer);
-        printf("queue_data%d: %s \n",pos_now, data_buffer[pos_now]);
+        //printf("data_buffer%d: %s \n",pos_now, data_buffer[pos_now]);
       }else {
         flag_eof = 1;//说明此时该文件已经没有数据了
         if(DEBUG) {
