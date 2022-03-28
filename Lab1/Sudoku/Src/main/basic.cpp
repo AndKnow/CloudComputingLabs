@@ -1,19 +1,14 @@
-#include <cstdio>
-#include <cstring>
+#include <bits/stdc++.h>
+#include <sys/time.h>
 #include <unistd.h>
-#include <stdlib.h> 
-#include <stdio.h>      
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/time.h> 
 #include <fcntl.h>
-#include <list>
-using std::list;
 
 
-#include "basic.h"
 #include "sudoku.h"
+#include "basic.h"
+#include "advanced.h"
 
+using std::list;
 
 void now(TimeOption flag)
 {
@@ -93,25 +88,22 @@ void read_File(const char *fileName, char **problem) {
   }
 }
 
+// 这里有个问题没解决,缓存可以用int类型的,直接修改,不用复制
 void sudoku_Solve(int pos) {
   int board[N]; 
-  printf("problem:");
   
   for(int i = 0;i < SIZE_SINGLE_LINE - 1; i++) {
     board[i] = data_buffer[pos][i] - '0';
-    printf("%d", board[i]);
-  }
+  } printf("problem :%s\n", data_buffer[pos]);
 
   solve_sudoku_dancing_links(board);
   outputStatus[pos] = is_solved;
 
-  printf("\nanswer :");
   for(int i = 0;i < SIZE_SINGLE_LINE - 1; i++) {
     data_buffer[pos][i] = board[i] + '0';//这里先复制,后面再看看
-    printf("%d", board[i]);
-  }
-  printf("\n");
+  }printf("answer :%s\n", data_buffer[pos]);
 }
+
 
 int flag_output_done = 0;//判断是否结束输出
 int flag_output_run = 0; //启动标志
@@ -143,33 +135,64 @@ void sorted_output() {
           break;
         }
       } 
-      //printf("solved :%s\n", data_buffer[pos_now]);
+      printf("solved and output :%s\n", data_buffer[pos_now]);
       outputStatus[pos_now] = sent;
       pos_now = pos_af;
       // 将缓存分成两部分(当前这么处理),
       if(pos_now == BUFFER_PROBLEMS/2 ){
-        printf("将号码存入队列:%d -> %d\n", pos_now, BUFFER_PROBLEMS);
-        Queue_FreeAry.push_back(FreeAry(pos_now, BUFFER_PROBLEMS));
+        putPos_toQueue(pos_now, BUFFER_PROBLEMS, end);
+  
       }else if(pos_now == 0){
-        printf("将号码存入队列:%d -> %d\n", pos_now, BUFFER_PROBLEMS/2);
-        Queue_FreeAry.push_back(FreeAry(pos_now, BUFFER_PROBLEMS/2));
+        putPos_toQueue(pos_now, BUFFER_PROBLEMS/2, end);
       }
   }
 }
 
 // 用来保存可分配的数字号
 list<FreeAry> Queue_FreeAry;
+pthread_mutex_t Lock_FreeAry;
+sem_t sem_FreeAry;
+
+// 封装线程同步
 void takepos_fromqueue(int &pos_begin, int &pos_end){
-  if(!Queue_FreeAry.empty()){
-    pos_begin = Queue_FreeAry.front().begin;
-    pos_end = Queue_FreeAry.front().end;
-    Queue_FreeAry.pop_front();
-  }
+    sem_wait(&sem_FreeAry);
+    pthread_mutex_lock(&Lock_FreeAry);
+
+    if(!Queue_FreeAry.empty()) {
+      for(auto it = Queue_FreeAry.begin(); it != Queue_FreeAry.end(); it ++)
+      {
+        printf("当前可用号码队列,%d -> %d\n", it->begin, it->end);
+      }
+      pos_begin = Queue_FreeAry.front().begin;
+      pos_end = Queue_FreeAry.front().end;
+      Queue_FreeAry.pop_front();
+    }
+
+    pthread_mutex_unlock(&Lock_FreeAry);
+
   if(DEBUG) {
     printf("从队列中取出号码:%d -> %d\n", pos_begin, pos_end);
   }
 }
 
+
+void putPos_toQueue(int a, int b,int where) {
+    pthread_mutex_lock(&Lock_FreeAry);
+
+    if(where == begin)
+      Queue_FreeAry.push_front(FreeAry(a, b));
+    else if(where == end)
+      Queue_FreeAry.push_back(FreeAry(a, b));
+
+    pthread_mutex_unlock(&Lock_FreeAry);
+    sem_post(&sem_FreeAry);
+
+  if(DEBUG) {
+    printf("将号码存入队列 :%d -> %d\n", a, b);
+  }
+}
+
+                                                                           
 void read_File(const char *fileName){
   if(DEBUG) {
     printf("open file : %s \n",fileName);
@@ -193,12 +216,12 @@ void read_File(const char *fileName){
     while(pos_now < pos_end) {
 
       // buffer作为指针,不分配内存只是赋值,永远只能覆盖
-      buffer = (char*)malloc(SIZE_SINGLE_LINE);
+      //buffer = (char*)malloc(SIZE_SINGLE_LINE);
       // 但是我为啥需要buffer呢?直接传到那个数组里面不就好了吗
 
       // 如果此处fgets,传入的参数是sizeof(buffer),只会传递指针的长度
       if(fgets((char*)data_buffer[pos_now], SIZE_SINGLE_LINE, file) != NULL){
-        len_read = strlen((char*)buffer);
+        // len_read = strlen((char*)buffer);
         int ch = fgetc(file);//接受掉换行符
         
         printf("data_buffer%d: %s \n",pos_now, data_buffer[pos_now]);
@@ -211,11 +234,8 @@ void read_File(const char *fileName){
         //printf("data_buffer%d: %s \n",pos_now, data_buffer[pos_now]);
       }else {
         flag_eof = 1;//说明此时该文件已经没有数据了
-        if(DEBUG) {
-            printf("将号码存入队列:%d -> %d\n", pos_now, pos_end);
-        }
         //没用完的号码存回去,需要放到队列的前面
-        Queue_FreeAry.push_front(FreeAry(pos_now,pos_end));
+        putPos_toQueue(pos_now, pos_end, begin);
         break;
       }
 
@@ -224,4 +244,32 @@ void read_File(const char *fileName){
 
 
   }  
+}
+
+
+extern void set_async();
+
+void init() {
+  
+  set_async(); //设置异步输入,接收文件名
+
+  // 分配可用的空闲数据缓存区
+  Queue_FreeAry.push_back(FreeAry(0,BUFFER_PROBLEMS/2));
+  Queue_FreeAry.push_back(FreeAry(BUFFER_PROBLEMS/2, BUFFER_PROBLEMS));
+  Lock_FreeAry = PTHREAD_MUTEX_INITIALIZER;
+  sem_init(&sem_FreeAry, 0, 2);//一开始有两个资源
+
+  // 分配缓存区资源
+  for(int i = 0; i < BUFFER_PROBLEMS; i++) {
+    data_buffer[i] = (char*)malloc(SIZE_SINGLE_LINE);
+  }
+
+  // 线程及同步初始化
+    //输入处理线程
+  Lock_FileNameQueue = PTHREAD_MUTEX_INITIALIZER;
+  sem_init(&sem_FileName, 0, 0);
+  pthread_create(&thread_appendTask, NULL, thread_AppendTask, nullptr);
+  pthread_detach(thread_appendTask);
+  
+
 }

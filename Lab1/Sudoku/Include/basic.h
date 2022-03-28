@@ -1,9 +1,13 @@
 #ifndef BASIC_H
 #define BASIC_H
 #include <list>
+#include <semaphore.h>
+
 const int DEBUG = true;
 
 // 通用工具和处理
+    // 初始化
+void init();
     // 保存当前时间,或者计算时间差
 enum TimeOption{TIME_SAVE = 0, TIME_CALC};
 void now(TimeOption flag); 
@@ -38,8 +42,15 @@ struct FreeAry {
 };
 
 // .h文件中使用的标准库类型,需要指明,以及头文件
+extern pthread_mutex_t Lock_FreeAry;
+extern sem_t sem_FreeAry;
 extern std::list<FreeAry> Queue_FreeAry;//可用编码队列
-void read_File(const char *fileName); //从可用编码队列获取数据后进行赋值
+    //从可用编码队列获取数据后进行赋值
+void read_File(const char *fileName); 
+    //从可用编码队列获取号码
 void takepos_fromqueue(int &a, int &b);//
+enum putWhere{begin = 0, end};
+void putPos_toQueue(int a, int b, int where);//
+
 
 #endif
