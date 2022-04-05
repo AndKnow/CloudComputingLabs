@@ -21,18 +21,21 @@ void set_async() {
     fcntl(0, F_SETFL, flags);
 
     signal(SIGIO, async_input);
+    signal(SIGINT,handler_SIGINT);
 }
+
+void handler_SIGINT(int sig) {
+} 
 
 void async_input(int sig) {
     if(sig == SIGIO) {
+        now(TIME_SAVE);
         char *file_name = wait_Intput(stdin);
         char *path_prefix = (char*)malloc(16);
         strcpy(path_prefix, "./test_answer/");//设置路径前缀
 
-        if(DEBUG) {
-            strcat(path_prefix, file_name);
-            strcpy(file_name, path_prefix);
-        }
+        strcat(path_prefix, file_name);
+        strcpy(file_name, path_prefix);
 
         printf("文件名队列新加入 :%s\n", file_name);
 
@@ -40,7 +43,8 @@ void async_input(int sig) {
         Queue_FileName.push_back(file_name);
         pthread_mutex_unlock(&Lock_FileNameQueue);
         sem_post(&sem_FileName);
-
+        
+        flag_output_run = 1;
     }
 
 }
@@ -77,3 +81,23 @@ void* thread_AppendTask(void* para) {
 
     return 0;
 }
+
+pthread_t threads_worker[nums_workerThreads];
+pthread_mutex_t Lock_TaskQueue;
+sem_t sem_Task;
+list<FreeAry> Queue_Task; 
+
+int flag_workerDone = 0;
+void* thread_Worker(void*) {
+    int begin, end;
+    while(!flag_workerDone) {
+        takepos_fromTask(begin, end);
+        for(int i = begin; i < end; i++) {
+            sudoku_Solve(i);
+        }
+    }
+
+    return 0;
+}
+
+pthread_t thread_output;

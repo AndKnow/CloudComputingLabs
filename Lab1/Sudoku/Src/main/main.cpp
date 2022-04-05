@@ -3,8 +3,10 @@
 #include <cstring>
 #include <string>
 #include <sys/time.h>
+#include <signal.h>
 #include <assert.h>
 #include <stdint.h>
+
 
 #include "sudoku.h"
 #include "basic.h"
@@ -16,9 +18,7 @@ int main(int argc, char* argv[])
 {
   init();
   now(TIME_SAVE);
-  while(1) {
-
-  }
+  while(1) {}
   now(TIME_CALC);
   return 0;
-}
+} 
